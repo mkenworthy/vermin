@@ -141,7 +141,7 @@ During the observations the HST takes several images during each epoch while at 
     \end{tabular}
 \end{table}
 
-The reduced epochs are shown in \autoref{figures/GS02.eps}. In the following we label the observations as Epoch 0 to 7 ($EP{1-7}$) in their chronological order.
+The reduced epochs are shown in \autoref{figures/GS02.pdf}. In the following we label the observations as Epoch 0 to 7 ($EP{1-7}$) in their chronological order.
 
 % \begin{table}[ht]
 % \centering
@@ -196,14 +196,14 @@ Results after steps 5 and 8 are illustrated in Figure GS01.
 
 \begin{figure*}[ht]
     \centering
-    \includegraphics[width=17cm]{figures/GS01.eps}
+    \includegraphics[width=17cm]{figures/GS01.pdf}
     \caption{Top four rows (incremental differential field orientations): Visit-level reductions after step 5 (PSF template subtraction) in Science Instrument Aperture Frame with rotationally invariant PSF and disk/galaxy co-rotating with telescope orientation. Bottom row: Epoch-level reductions after step 8 (multi-roll combination in “north up” (NUP) orientation).  Central regions digitally masked as black are unsampled or degraded due to STIS occulting masks, HST diffraction spikes or other image/PSF-subtraction artifacts. Left to right columns: epoch 0 to epoch 7.}
     \label{fig:GS01}
 \end{figure*}
 
 \begin{figure*}[ht]
     \centering
-    \includegraphics[width=17cm]{figures/GS02.eps}
+    \includegraphics[width=17cm]{figures/GS02.pdf}
     \caption{HD107146 debris ring transit (ingress) over background galaxy - chronologically  in panels E0 - E7. Same as \autoref{fig:GS01} bottom row (NUP) images, but illustrated in more detail.  Panels E0/E1 epochs with galaxy located at “pre-transit” periphery of debris ring re-reduced from GO 12228. Other panels (starting ~ 6 years later) are twice a year with unequal cadence per HST scheduling constraints (assuring coronagraphically obscured regions do not superimpose on the location of the galaxy with other spacecraft orientations constraints). All images are astrometrically co-registered on the obscured central star (position indicated by small red dot), are shown as log10 stretch from [-2] to [-0.7] dex counts/sec/per pixel; north up, 300x300 pixel sub-array extracts centered on target. (1 pixel = $50.077$ mas). FOVs extend further west than illustrated and provide a basis for background noise estimation.  The vermin galaxy has a peak surface brightness (Gmax) of $\sim 0.5$ counts/sec/per pixel, the disk at the same stellocentric angular distance with Dmax $\sim 0.04$ counts/sec/pixel, and a background (at large distance from the star and galaxy with RMS noise $\sigma_{rms} \approx 3\times 10^{-3}$.}
     \label{fig:GS02}
 \end{figure*}
@@ -284,6 +284,287 @@ We illustrate with two examples. First, in \autoref{fig:GS03} left panel, to pro
 
 % Cheers,
 % Glenn
+
+\section{Method}
+\label{sec:method}
+
+From \autoref{sec:disk_model}, we assume that $\int \rho dl$ along the line of sight varies with the radial separation from the star i.e. $\frac{d}{dr}\tau_{\nu} \napprox 0$ which is supported by surface density models of e.g. \cite{krivov2010debris}. 
+Assuming that the optical depth is proportional to the surface brightness of the disk, we rewrite \autoref{eq:beer_lamber_law} to include the disk surface brightness $\hat{D}^{\prime}$, yielding \autoref{eq:transmission_adjusted}. This is a good-first order assumption since a brighter part of the disk, assuming that the particles inside the disk are the same size and and have the same optical properties, will have either a higher density or the line-of-sight through the disk will be longer.
+\begin{equation}
+\label{eq:transmission_adjusted}
+    T_{adj}=\frac{\Phi_{\nu,1}}{\Phi_{\nu,0}}=e^{-\tau_{\nu} \times \hat{D}^{\prime}}
+\end{equation}
+
+The epochs are then given by \autoref{eq:epoch}.
+\begin{equation}
+\label{eq:epoch}
+    I = \langle D + G \times T_{actual} \rangle
+\end{equation}
+First we subtract the disk model to remove the scattered light from the central star;
+\begin{equation}
+\label{eq:epoch_no_disk}
+    I_{G} = \langle D + G \times T_{actual} \rangle - D^{\prime}.
+\end{equation}
+Since the galaxy is at different positions with respect to the disk in the epochs, translating the galaxy as-is would result in residuals that include the imprint of the different disk extinctions convolved with the galaxy flux. Hence, we divide by the estimated transmission field $T^{\prime}(\tau_{\nu}^{\prime};D^{\prime})$ constructed by \autoref{eq:transmission_adjusted} where we test a model optical depth $\tau_{\nu}^{\prime}$. So that the model galaxy image $G^{\prime}$ is given by \autoref{eq:galaxy}.
+\begin{equation}
+\label{eq:galaxy}
+   G^{\prime}(\tau_{\nu}^{\prime}) \equiv \frac{\langle D + G \times T_{actual} \rangle - D^{\prime}}{T^{\prime}(\tau_{\nu}^{\prime})}.
+\end{equation}
+This means that we do not need to assume that the extinction at any epoch is zero.
+
+We then define the residuals $R$ for a single epoch pair, $EP_{ref}$ and $EP_{target}$, by \autoref{eq:residulas_pair}, where we affine translate the model galaxy image of the reference epoch to the position of the target epoch using bi-linear interpolation.
+\begin{equation}
+\label{eq:residulas_pair}
+    R = G_{target}^{\prime} - affine \left( G_{ref}^{\prime}, \; \Delta x,\; \Delta y \right), 
+\end{equation}
+This method finds an upper opacity limit down to $\tau_{\nu} \approx 10^{-7}-10^{-6}$, for representative, noiseless model images constructed using \autoref{eq:epoch}, when the offsets between the images are known.
+
+In order to find the posterior probability distribution of the optical depth we use the $\chi^{2}$-residual as given in \autoref{eq:chi_squared}.
+
+\begin{equation}
+\label{eq:chi_squared}
+        \chi^{2}_{target} = \sum^{M} \left[ \frac{G_{target}^{\prime} - affine \left( G_{ref}^{\prime}, \; \Delta x,\; \Delta y \right)}{\sigma_{RMS}} \right]^{2},
+\end{equation}
+where $M$ is the masked target galaxy region, and the RMS noise $\sigma_{RMS}$ is assumed to be constant over the image.
+
+This residual is well defined for all $G_{target}^{\prime} \neq G_{ref}^{\prime}$, so the residual-sum-of-squares (RSS) follows from the $\chi^{2}$-residuals. 
+There are two options for fitting the optical depth:
+\begin{enumerate}
+	\item Select one epoch as a reference and evaluate the other epochs against it, mirroring the configuration \cite{vanSluijs2018feasibility} proposed. This leads to fitting $1+2\left(N_{EP}-1\right)$ parameters: $\tau$ and $N_{EP}-1$ pairs of $\Delta x, \Delta y$ w.r.t. the reference epoch.
+	\item Fit using the whole set of combinations of 2 epochs from the $N$ epochs. This means fitting $1+2\times\binom{N}{2}$ parameters, again the optical depth and $N$ pairs of $\Delta x, \Delta y$.
+\end{enumerate}
+In this work we proceed with option 2 in order to exploit the equivariance of the combinations and hence construct the RSS as shown in \autoref{eq:rss}.
+\begin{equation}
+\label{eq:rss}
+	RSS = \sum_{i=1}^{N_{EP}} \chi^{2}_{EP_{i}}
+\end{equation}
+
+% \todo[inline]{Master thesis used emcee, new method uses Nested Sampling implemented in ultranest (\url{https://johannesbuchner.github.io/UltraNest/index.html}) because of the moderately high dimensionality and robustness of ultranest compared to emcee, especially w.r.t. correlations between parameters and heavy tailed distributions, as well as convergence with an acceptable dlogz. We also need the vectorization of ultranest to get the required sampling.}
+% We use the Affine Invariant MCMC Ensemble sampler \texttt{emcee} by \cite{emcee} to find the most likely optical depth as well as its posterior while marginalizing over the translations $\Delta x_i,\; \Delta y_i$. As expected, the gradient in the residuals is very steep for translations and much less steep for the optical depth.
+
+We derive posterior probability distributions and the Bayesian evidence with the nested sampling Monte Carlo algorithm MLFriends \citep{buchner2016nested, buchner2019nested} using the UltraNest\footnote{\url{https://johannesbuchner.github.io/UltraNest/}} package \citep{buchner2021UltraNest}. \todo[inline]{Mention prior space for dx, dy: linear for tau both log and linear}
+% As expected, the gradient in the residuals is very steep for translations and much less steep for the optical depth.
+
+%\todo[inline]{I am not sure whether to include the following because it is a very bad estimate}
+% from here
+% We estimate the sensitivity of this method in the presence of noise by linearizing the Beer-Lambert law and setting $SNR=1$ and $\sigma_{noise}=3\times 10^{-3}$ for which the minimum detectable optical depth using a single epoch pair is $\tau_{min} \gtrapprox 1 \times 10^{-3}$, which roughly agrees with the estimate of \cite{schneider2016extinction} extracted from the $\omega \tau$ product of scattered light.
+% to here
+
+We verify our method by constructing representative model images based on \autoref{eq:epoch}, with gaussian noise but without streaks or bad pixels.
+Experimentally, we find that our method is suitable to detect the optical depth of the dusty disk down to $\tau_{min}\approx 10^{-4} - 5 \times 10^{-4}$, and find that the residual $R_i$ and $\chi^{2}$-residual images are suitable to visually inspect the goodness of the fit.
+\section{Results}
+\label{sec:results}
+
+% \subsection{Chi-Squared Residuals}
+% \label{sec:res_residuals}
+% \autoref{fig:actual_chi_squared_images_ep0} shows a representative image of $\chi^{2}$-residuals from MCMCs using EP0 as the reference epoch. It is clear that there the fitting has problems finding a good solution, especially near the galaxy core (see EP4 specifically). In contrast, using EP1 as a reference produces smaller residuals, which are in fewer pixels as can be seen in \autoref{fig:actual_chi_squared_images_ep1}. Similarly to \autoref{fig:actual_chi_squared_images_ep0} however, the large residuals are still near the core of the galaxy. Translating and stacking the images does not reveal any other problematic regions other than the galaxy core. 
+
+% \begin{figure}[ht]
+% 	\centering
+% 	\missingfigure[figcolor=white]{chi squared images using EP0 as reference.}
+% 	%\includegraphics[height=0.8\textheight]{figures/results/chi_squared_images_exp_disk_beer_lambert_HD107146_EP0.png}
+% 	\caption{Epochs of model images constructed by the terms inside the summations of \autoref{eq:chi_squared} for MCMCs using EP0 as a reference. The remaining signal in the masked region (white ellipse) is sometimes close to $1$ but shows lobes and large residuals near the core, especially for EP4.}
+% 	\label{fig:actual_chi_squared_images_ep0}
+% \end{figure}
+
+% \begin{figure}[ht]
+% 	\centering
+% 	\missingfigure[figcolor=white]{chi squared images using EP1 as reference.}
+% 	%\includegraphics[height=0.8\textheight]{figures/results/chi_squared_images_exp_disk_beer_lambert_HD107146_EP1.png}
+% 	\caption{Epochs of model images constructed by the terms inside the summations of \autoref{eq:chi_squared} for MCMCs using EP1 as a reference. The remaining signal in the masked region (white ellipse) is sufficiently close to $1$. Some large residuals are still present, specifically near the core of the galaxy.}
+% 	\label{fig:actual_chi_squared_images_ep1}
+% \end{figure}
+
+\subsection{Residual Images}
+\label{sec:res_residual_images}
+
+The maximum likelihood point residual images, assuming a common opacity proportional to the disk brightness, are shown in \autoref{fig:actual_subtracted_images_ep1}. Combinations with EP2 have a large residual pixel in the galaxy bulge which might be spurious noise or due to short lived processes within the bulge. A visual inspection of the corresponding pixel in EP2 does not seem corrupted and is very informative about the optical depth due to its high S/N it was not masked.
+
+% old text below:
+% \autoref{fig:actual_subtracted_images_ep0} shows a representative image from MCMCs using EP0 as the reference epoch. While the remaining differentials are small compared to the initial fluxes the are still a factor of $\approx 3$ larger than the noise. The differentials are especially large near the galaxy core. Again, using EP1 as a reference produces smaller differentials, which are in fewer pixels as can be seen in \autoref{fig:actual_subtracted_images_ep1}. Still, there are again larger differentials are near the core of the galaxy. 
+% Translating and stacking the images again does not reveal any other problematic regions other than the galaxy core. 
+
+% \begin{figure}[ht]
+% 	\centering
+% 	\missingfigure[figcolor=white]{Residual images using EP0 as reference.}
+% 	% \includegraphics[height=0.8\textheight]{figures/results/subtraction_images_exp_disk_beer_lambert_HD107146_EP0.png}
+% 	\caption{Epochs of model images constructed by \autoref{eq:residulas_pair} for MCMCs using EP0 as a reference. The remaining signal in the masked region (white ellipse) is evenly distributed around $0$ and very small compared to the values in the the epochs. The images again show lobes and large differentials near the core, especially for EP4.}
+% 	\label{fig:actual_subtracted_images_ep0}
+% \end{figure}
+
+% \begin{figure}[ht]
+% 	\centering
+% 	\missingfigure[figcolor=white]{Residual images using EP1 as reference.}
+% 	% \includegraphics[height=0.8\textheight]{figures/results/subtraction_images_exp_disk_beer_lambert_HD107146_EP1.png}
+% 	\caption{Epochs of model images constructed by \autoref{eq:residulas_pair} for MCMCs using EP1 as a reference. The remaining signal in the masked region (white ellipse) is evenly distributed around $0$ and very small compared to the values in the the epochs. The images show some larger differentials near the core.}
+% 	\label{fig:actual_subtracted_images_ep1}
+% \end{figure}
+
+\begin{figure*}[ht]
+	\centering
+	\includegraphics[width=0.99\textwidth]{figures/residuals_common_tau.png}
+	\caption{Residuals at maximum likelihood point for all image pairs. The large residuals for pairs including EP2 are due to the specific pixel location of the galactic bulge with respect to the location of EP0 which is taken as the reference origin.}
+	\label{fig:actual_subtracted_images_ep1}
+\end{figure*}
+
+\subsection{Optical Depth}
+\label{sec:res_disk_properties}
+
+% 1s, 2s, 3s
+%  3.96 \times10^{-4},  7.23 \times10^{-2},   7.19 \times10^{-1}
+We find an upper opacity limit (84$^{th}$ percentile) of $\tau_{max} \leq 3.96 \times10^{-4}$. \autoref{fig:actual_hist} shows the $\tau$ posterior probability distribution as well as the quantile functions for each of the $\tau \times \sigma_{\hat{D}}$ at the respective galaxy positions. For this plot we take $\sigma_{\hat{D}}$ as the mean disk SB in a 2 pixel radius around the infered galaxy position.
+
+% \begin{figure}[ht]
+% 	\centering
+% 	\missingfigure[figcolor=white]{Histogram of the optical depth posterior probability.}
+% 	% \includegraphics[width=0.95\textwidth]{figures/results/hist_optical_depth_exp_disk_beer_lambert_HD107146_EP1.png}
+% 	\caption{Histogram of the optical depth posterior probability distribution using EP1 as a reference and the adjusted Beer-Lambert law for its extinction function.}
+% 	\label{fig:actual_hist}
+% \end{figure}
+
+\begin{figure*}[ht]
+	\centering
+	%\missingfigure[figcolor=white]{Histogram of the optical depth posterior probability.}
+	\includegraphics[width=0.99\textwidth]{figures/corner_common_tau_BW.pdf}
+	\caption{Posterior distribution assuming common optical depth proportional to the disk brightness. \todo[inline]{Description TODO.}}
+	\label{fig:full_corner_common_tau}
+\end{figure*}
+
+\begin{figure}[ht]
+	\centering
+	%\missingfigure[figcolor=white]{Histogram of the optical depth posterior probability.}
+	\includegraphics[width=0.49\textwidth]{figures/HD107146_tau_hist_quantiles.pdf}
+	\caption{Marginalized optical depth posterior distribution assuming common optical depth proportional to the disk brightness together with the inverse CDF without assuming proportionality scaled by the disk surface brightness.}
+	\label{fig:actual_hist}
+\end{figure}
+
+\section{Discussion}
+\label{sec:discussion}
+
+We detect upper limits for the optical depths around $\tau_{max} = 1\times 10^{-4} - 1\times 10^{-3}$ depending on the extinction law used. This is reasonably close to the detection limit of us and \cite{schneider2016extinction}. 
+Nevertheless, our method is prone to underestimate the opacity slightly by having a small gradient towards lower optical depths and hence more walkers pile up near the physical limit than would otherwise. From experiments with representative model images this offset is small compared to $\tau$ and other error sources.
+
+% =============================
+%      Particle Density
+% =============================
+
+\subsection{Disk Mean Solid Particle Density}
+\label{sec:dis_disk_density}
+
+In previous work e.g. of \cite{ricci2015alma} and \cite{vanSluijs2018feasibility} a uniform mean solid particle density was assumed in the disk. Both rely on probes of protoplanetary disks in the Taurus-Auriga star forming region. We avoid the implicit assumption that these PPDs are similar to the HD 107146 debris disk by deriving the mean solid density from the fractional luminosity $f$, the total effective cross section of the dust $\sigma_{tot}$ and the dust mass $M_{disk}$.
+
+Assuming a uniform dust distribution, the total cross section of the dust grains in the disk, assumed to be a torus of radius $r_{disk}$ with a width of $dr$ is given by:
+\begin{equation}
+    \sigma_{tot} = 4 \pi r_{disk}^2 f
+\end{equation}
+with $\sigma_{tot}$ to total cross section of the dust and $f$ the fractional luminosity of the disk \citep{wyatt2008evolution}.
+While \cite{marino2018gap} take the outer radius of the disk from as $135.6^{+1.1}_{-1.2} ~ AU$, and \cite{vanSluijs2018feasibility} assume an outer radius of $\approx 180 ~ AU$, the debris disk extends significantly further than that. This can be seen from scattered-light images which are sensitive to different dust sizes than IR observations \citep{ertel2011multi}. \cite{vanSluijs2018feasibility} estimate an extent of $200-250~ AU$. Taking a cut-off surface brightness of $0.2 ~microJy~arcsec^{-2}$ for the furthest extend of the disk gives a stellocentric outer radius of $\approx 9"$ or $r_{disk,~outer} = 240^{+10}_{-40}~AU$ \citep{schneider2014probing}. We take this estimate, rather than the previous values as the IR-flux at these larger radii still contribute to the fractional luminosity. The fractional luminosity was initially estimated by \cite{moor2006nearby} as $9.2\times10^{-4} \pm 0.9\times10^{-4}$, however \cite{ertel2011multi} give a value of $1.07\times10^{-3}$ and \cite{schneider2014probing} of $1.2\times10^{-3}$. Since, \cite{ertel2011multi} have multiple concerns about their model (see their section 5.2) we will use the more recent value\footnote{Note however, that the most recent work on the disk by \cite{mesa2021limits} again use the value from \cite{ertel2011multi}.} from \cite{schneider2014probing}.
+The total cross section of the dust is then $\sigma_{tot} = 860 ~ AU^2$.
+We assume the dust in the debris disk is continually replenished, most likely by collisional cascades and grinding of planetesimals which continually (re-) produce $\mu m$ size dust grains as suggested by \cite{kenyon2005prospects} in general and \cite{ricci2015alma} for the HD 107146 disk. This is supported by the work of \cite{chiang2009fomalhaut} who find, for the Formalhaut debris disk and grains produced by collisional cascades, a size of $> 8~ \mu m$.
+Similar to \cite{vanSluijs2018feasibility}, we assume the dust is mainly (astro-) silicate particles on circular orbits. The smallest grains are then continually blown out of the system by stellar radiation with a the minimum particle size - the blow-out grain size $a_{min}$ - of $2.7~\mu m$. However, if the dust grains are not silicates the blow-out grain size could be as low as $1.7-1.1~\mu m$ \citep{ricci2015alma, marino2018gap}. we will only consider the first case, as it is reasonable to assume that at least a large mass fraction of the dust is silicates according to \cite{marino2018gap}. In either case, we assume that the wavelength at which we probe the dust is much smaller than the blow-out grain size and hence we assume Mie scattering. The effective cross section of the (assumed spherical) dust grains is then given by \autoref{eq:eff_cross_section} and \autoref{eq:size_normalization}.
+
+\begin{equation}
+\label{eq:eff_cross_section}
+    \sigma_{grain} = 2 \pi a^2
+\end{equation}
+\begin{equation}
+\label{eq:size_normalization}
+    \int_{a_{\min }}^{\bar{a}} n\left(a^{\prime}\right) \mathrm{d} a^{\prime}=\frac{1}{2}
+\end{equation}
+with $n(a)$ normalized as by \cite{vanSluijs2018feasibility}.
+
+\cite{draine2006submillimeter} finds that solid particles growing by agglomeration in debris disks consisting of i.a. mainly silica, follow a power law size distribution $d n / d a \propto a^{-p}$. \cite{dohnanyi1969collisional, tanaka1996steady} and \cite{tanaka2005dust} show that this power law with $3\lessapprox p \lessapprox 3.5$, under certain assumptions, is applicable to particles growing by coagulation and collisional fragmentation such as we expect for this debris disk. \cite{weidenschilling1997origin} argues that for the the solar nebula particles size can be approximated with $p=3.5$. This power law is only valid for 
+$a \leq a_{\max }$ and under the assumption that $\lambda \leq a_{\max }$ \citep{draine2006submillimeter} which we also required above. In the following we make the conservative assumption that $a_{\max }=2~ cm$ from \cite{ricci2015alma} following the work of \cite{vanSluijs2018feasibility}.
+\cite{ricci2015alma} find a grain size distribution for the disk of HD 107146 with $p=3.25 \pm 0.09$. Recent work by \cite{marino2018gap} also use a power law size distribution to model the debris disk of HD 107146, however, they assume $3.36 \leq p \leq 3.5$ without further justification. In this work we will assume a size distribution as found by \cite{ricci2015alma}, i.e. $p=3.25 \pm 0.09$.
+The average grain size is then $\bar{a} = 3.7~\mu m$.
+
+The most accurate method to find the mass of a debris disk is through direct observation of the disk flux \cite{alexander2014dispersal, wyatt2008evolution}. Using this method, \cite{williams2004detection} find a lower limit for the dust mass of HD 107146s debris disk of $M_{disk}=0.10 \pm 0.02~ M_{\oplus}$ by assuming a dust mass absorption coefficient. Without this assumption they set the limits for the dust mass to $0.10 \leq M_{disk} \leq 0.43$ in $M_{\oplus}$. More recent investigations of the dust mass rely on fitting a disk model to observations. \cite{ricci2015alma} find a disk mass of $\approx 0.2 ~M_{\oplus}$, wheres \cite{marino2018gap} find a best fit value of $0.250 \pm 0.004 ~M_{\oplus}$. The difference in accuracy between the first and more recent estimations is mostly due to the different observatory capabilities, the James Clerk Maxwell Telescope and ALMA respectively. In the following we will use the most recent value of $M_{disk}=0.250 \pm 0.004 ~M_{\oplus}$.
+
+Assuming a uniform dust density $\rho$ and grain radius $r_{dust}$ in the disk, \cite{wyatt2008evolution} writes the disk mass as
+\begin{equation}
+\label{eq:disk_mass_wyatt}
+    M_{disk} = 1.34 \rho \bar{a} \sigma_{tot}
+\end{equation}
+Using the values defined above I find
+\begin{equation}
+\label{eq:mean_density_wyatt}
+    \rho  = \frac{M_{disk}}{1.34 \bar{a} \sigma_{tot}} = 1.5 \pm 0.025 ~g~cm^{-3}
+\end{equation}
+This is larger than the value assumed in both \cite{ricci2015alma} and \cite{vanSluijs2018feasibility} who both assume a uniform density of $1.2~g~cm^{-3}$, nevertheless it is within the expected range for debris disks. As noted above, the estimated density is based on the previous work of \cite{miyake1993effects} and \cite{ricci2010dust}. It should be noted that the stars (Taurus-Auriga star forming region), surveyed in these works were significantly younger than HD 107146 with ages of $0.1~Myr$ to $17~Myr$. Still, \cite{ricci2010dust} do not find an evolutionary trend of the spectral index $\beta$ in their samples on which the estimations of the mean solid densities are based. Furthermore, it should also be noted that the dust masses for these disks are significantly higher than for the disk of HD 107146 \citep{ricci2010dust}. While we avoid assuming the mean solid particle density we have used a somewhat arbitrary cut-off brightness at which the disk ends.
+
+% =============================
+%      Column Density
+% =============================
+
+\subsection{Column Density}
+\label{sec:dis_column_density}
+
+With above assumptions the column density $\Sigma$ can be written as
+\begin{equation}
+    \label{eq:column_density}
+    \Sigma=\frac{\tau}{\sigma} m_{p} \quad with \quad \sigma=2 \pi a^{2}
+\end{equation}
+where  $\sigma$ is the effective cross section and $m_p$ the mass of a particle \citep{vanSluijs2018feasibility}. Using \autoref{eq:eff_cross_section} the column density can be written explicitly as a function of the opacity and density.
+
+\begin{equation}
+\label{eq:column_density2}
+    \Sigma=\frac{2}{3} \tau \bar{a} \rho = 1.45 \times 10^{-7} \pm 2.44 \times 10^{-10} ~g ~cm^{-2} % old value: 1.8 \times 10^{-6} \pm 3.1 \times 10^{-9} ~g ~cm^{-2}
+\end{equation}
+
+This upper limit is $\sim 2$ orders of magnitude lower than the estimate by \cite{vanSluijs2018feasibility}. This is almost completely due to the much lower opacity limit which we find in this work. This new value is, nevertheless, within the error of the previous work.
+\todo[inline]{Mention, this is not a real difference, see fig, but instead do to the way we define the opacity, scaling it by the disk SB (arbitrary units). Reverting this scaling (see \autoref{fig:column_depth_van}) results in excellent agreement between our methods.}
+
+% =============================
+%           Opacity
+% =============================
+
+\subsection{Opacity}
+\label{sec:dis_opacity}
+
+From \autoref{eq:optical_depth} the opacity is related to the optical depth as:
+\begin{equation}
+    \tau=\int \rho \kappa d l
+\end{equation}
+Assuming the vertical density profile can be assumed to fulfill $\int \rho_{l} dl = \int \bar{\rho} dl $, i.e. is well approximated by the average density we determined above we can write for the opacity of the debris disk:
+\begin{equation}
+    \label{eq:kappa}
+    \kappa  = \frac{\tau}{\rho  l}
+\end{equation}
+From \cite{hughes2018debris} we take the median ratio of disk height to radius $l/r=0.06$ which leads to an approximate disk height of HD 107146 of $l \approx 14.4 ~AU$ which implies a very dispersed disk at the radii we probe. From \autoref{eq:kappa} we then find an opacity of $\kappa \approx 4.496\times10^{-22} ~cm^2/g)$. % old value: $\kappa \approx 1.55\times10^{-18} ~cm^2/g)$.
+
+% =============================
+%        Comparison
+% =============================
+
+\subsection{Comparison with Previous Work}
+\label{sec:dis_Previous_research}
+
+From our analysis we find a optical depth much smaller than what could be detected by \citep{vanSluijs2018feasibility} since our method has a higher accuracy. However, \citep{schneider2016extinction} place a constraint based on assumption of the particle albedo $\omega$ on the $\omega \tau$ product. They find a $(\omega \tau)_{max} = 5\times10^{-4}$ which would, with our results, imply an albedo of $\lessapprox 1$ which is bordering on being unphysical and disagrees with observations due to the particle temperature that dust with such an albedo would produce. However, since this is an estimation of the maximum albedo-optical-depth product this constraint is not necessarily incompatible with our work.\\
+
+The review figure of the column depth of HD 107146s debris disk by \cite{vanSluijs2018feasibility}, shown in \autoref{fig:column_depth_van} cannot be used as a direct comparison with our results since other particle sizes are being probed by exploiting different mechanisms.
+
+% old value: Our result would be near $log \Sigma \approx -1.5\times 10^4 ~g/cm^2$. 
+
+\begin{figure}[ht]
+	\centering
+	%\missingfigure[figcolor=white]{Comparison optical depth: Past work vs ours .}
+	\includegraphics[width=0.49\textwidth]{figures/HD107146_column_density.pdf}
+	\caption{Plot of the optical depths detected in the past for different mechanisms and particle sizes as well as the work of \cite{vanSluijs2018feasibility} and our estimate on $\tau \hat{\sigma}_{D}$ with on the upper limit for attenuation in the optical.}
+	\label{fig:column_depth_van}
+\end{figure}
+
+The optical depth we find is low for debris disks, especially ones with a high fractional luminosity, and is only ~$2$ orders of magnitude above what a transport dominated disk would have \citep{krivov2010debris}.
+
+From our initial assumption the optical depth varies over the disk proportional to its surface brightness.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+Recently, the feasibility of differential photometry using light with a wavelength of $\approx 5850 ~\si{\angstrom}$ for probing the optical depth through attenuation of a background galaxy has been shown for the debris disk of HD 107146. We use extinction of a transiting background galaxy to probe the optical depth of the debris disk of this solar analogue, which has in the past has been done at millimeter and optical wavelengths. However, in the past different mechanisms; emission and scattering, have been used. 
+
+Our result is near the estimated detection threshold of our method, with the upper limit of the optical depth $\tau_{max} = 10^{-4} - 10^{-3}$. This result is much lower than the previous upper limit, and agrees tenuously with independent estimates. Based on this result we also give some other, dependent estimations of disk parameters such as its density and opacity at the particle sizes probed.\\
+
+Our work is important with respect to developing novel method for opacity estimations that is independent of some of the assumptions of previous methods. Furthermore, we also provide an independent constraint on the optical depth of a solar analogue which has been investigated for the presence of potential using indirect methods due to ring structures visible in its disk. The background galaxy will continue to transit the disk, and is at the time of writing behind its most dense part for particles of $\mu m$-sizes. New observations could find a lower limit on the opacity, especially when using better coronagraphs and detectors with higher signal-to-noise ratios. The method we use is not limited to the optical, instead it can be used at a wide range of wavelengths to probe different particle distributions in the disk.
 
 
 % \input{sections/01_observations}
